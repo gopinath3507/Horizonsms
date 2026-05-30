@@ -188,7 +188,7 @@ export default function BillingPage() {
                                     <div className="flex items-start gap-4">
                                         <img src={LOGO_URL} alt="logo" className="w-24 h-24 object-contain shrink-0" />
                                         <div>
-                                            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#4A3FBF] leading-tight">{SCHOOL.name}</h2>
+                                            <h2 className="font-heading text-base sm:text-lg font-extrabold text-[#4A3FBF] leading-snug">{SCHOOL.name}</h2>
                                             <p className="text-xs text-slate-600 max-w-sm mt-1 leading-relaxed">{SCHOOL.address}</p>
                                             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-700">
                                                 <span className="font-semibold">📞 {SCHOOL.phone}</span>
@@ -196,10 +196,11 @@ export default function BillingPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0">
+                                    <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                                        <img src={ARIVU_LOGO_URL} alt="Arivu Foundation" className="w-20 h-20 object-contain" data-testid="arivu-logo" />
                                         <div className="inline-block bg-[#4A3FBF] text-white px-5 py-2 rounded-xl font-heading text-2xl font-extrabold tracking-wider shadow-lg">INVOICE</div>
-                                        <div className="font-mono text-sm text-slate-700 font-bold mt-2">#{viewing.invoice_no}</div>
-                                        <div className="text-xs text-slate-500 mt-1">Issued: <span className="font-semibold text-slate-700">{viewing.issued_date}</span></div>
+                                        <div className="font-mono text-sm text-slate-700 font-bold mt-1">#{viewing.invoice_no}</div>
+                                        <div className="text-xs text-slate-500">Issued: <span className="font-semibold text-slate-700">{viewing.issued_date}</span></div>
                                         <div className="text-xs text-slate-500">Due: <span className="font-semibold text-[#F39C2A]">{viewing.due_date}</span></div>
                                     </div>
                                 </div>
