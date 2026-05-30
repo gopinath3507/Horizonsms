@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, formatApiError } from "@/lib/api";
 import { CLASS_OPTIONS, FEE_CATEGORIES, formatINR } from "@/constants/branding";
-import { Plus, Search, Edit3, Trash2, X, User } from "lucide-react";
+import { Plus, Search, Edit3, Trash2, X, User, Cake, PartyPopper } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast, Toaster } from "sonner";
 
@@ -11,6 +11,28 @@ const EMPTY = {
     emergency_contact_name: "", emergency_contact_phone: "",
     enrollment_date: "", status: "active", fee_category: "Standard", monthly_fee: 3000, notes: "",
 };
+
+// Returns "today" | "tomorrow" | null based on whether the student's birthday
+// falls in the next 24h window in Asia/Kolkata. dob is YYYY-MM-DD.
+function birthdayAlert(dob) {
+    if (!dob) return null;
+    const parts = dob.split("-");
+    if (parts.length !== 3) return null;
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    if (!m || !d) return null;
+    // Today in IST
+    const istNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const today = { m: istNow.getMonth() + 1, d: istNow.getDate() };
+    // Tomorrow in IST
+    const istTomorrow = new Date(istNow.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrow = { m: istTomorrow.getMonth() + 1, d: istTomorrow.getDate() };
+    if (m === today.m && d === today.d) return "today";
+    if (m === tomorrow.m && d === tomorrow.d) return "tomorrow";
+    return null;
+}
+
+function ageOnNextBirthday(_dob) { return null; }
 
 export default function StudentsPage() {
     const { user } = useAuth();
@@ -34,6 +56,13 @@ export default function StudentsPage() {
         (!filterClass || s.class_name === filterClass) &&
         (s.name?.toLowerCase().includes(search.toLowerCase()) || s.parent_name?.toLowerCase().includes(search.toLowerCase()))
     );
+
+    // Compute upcoming-birthday students (today / tomorrow IST) — for alert banner
+    const birthdays = useMemo(() => {
+        return students
+            .map((s) => ({ ...s, _alert: birthdayAlert(s.dob) }))
+            .filter((s) => s._alert);
+    }, [students]);
 
     const openCreate = () => { setEditing(null); setForm(EMPTY); setOpen(true); };
     const openEdit = (s) => { setEditing(s); setForm({ ...EMPTY, ...s }); setOpen(true); };
@@ -84,6 +113,41 @@ export default function StudentsPage() {
                 </select>
             </div>
 
+            {/* 🎂 Upcoming Birthday Alert (today / next 24h IST) */}
+            {birthdays.length > 0 && (
+                <div className="relative overflow-hidden rounded-2xl shadow-xl text-white" data-testid="birthday-alert-banner">
+                    <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-amber-400" />
+                    <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-yellow-300/40 blur-3xl" />
+                    <div className="absolute -bottom-10 -left-10 w-44 h-44 rounded-full bg-pink-300/40 blur-3xl" />
+                    <div className="relative p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex items-center gap-3 shrink-0">
+                            <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur-md ring-1 ring-white/40 flex items-center justify-center shadow-lg">
+                                <PartyPopper className="w-7 h-7" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] uppercase tracking-widest font-bold text-white/85">Birthday Alert</div>
+                                <div className="font-heading text-xl sm:text-2xl font-extrabold leading-tight">
+                                    {birthdays.length} birthday{birthdays.length > 1 ? "s" : ""} in the next 24 hours!
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex-1 flex flex-wrap gap-2">
+                            {birthdays.map((s) => (
+                                <div key={s.id} className="flex items-center gap-2 bg-white/20 backdrop-blur-md ring-1 ring-white/30 rounded-full pl-1 pr-3 py-1 shadow-md" data-testid={`birthday-chip-${s.id}`}>
+                                    <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">{s.name?.[0]?.toUpperCase()}</div>
+                                    <div className="leading-tight">
+                                        <div className="font-bold text-sm">{s.name}</div>
+                                        <div className="text-[10px] uppercase tracking-wider opacity-90">
+                                            {s._alert === "today" ? "🎂 Today" : "🎈 Tomorrow"} · {s.class_name}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm" data-testid="students-table">
@@ -99,15 +163,29 @@ export default function StudentsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map((s) => (
-                                <tr key={s.id} className="border-t border-slate-100 hover:bg-slate-50">
+                            {filtered.map((s) => {
+                                const alert = birthdayAlert(s.dob);
+                                return (
+                                <tr key={s.id} className={`border-t border-slate-100 transition-colors ${alert ? "bg-gradient-to-r from-pink-50 via-amber-50 to-yellow-50 hover:from-pink-100 hover:to-amber-100" : "hover:bg-slate-50"}`} data-testid={alert ? `birthday-row-${s.id}` : undefined}>
                                     <td className="py-3 px-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4A3FBF] to-[#F39C2A] flex items-center justify-center text-white font-bold">
+                                            <div className={`relative w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${alert ? "bg-gradient-to-br from-pink-500 to-amber-500 ring-2 ring-pink-300" : "bg-gradient-to-br from-[#4A3FBF] to-[#F39C2A]"}`}>
                                                 {s.name?.[0]?.toUpperCase()}
+                                                {alert && (
+                                                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center" title={alert === "today" ? "Birthday today!" : "Birthday tomorrow!"}>
+                                                        <Cake className="w-3 h-3 text-pink-600" />
+                                                    </span>
+                                                )}
                                             </div>
                                             <div>
-                                                <div className="font-semibold text-slate-900">{s.name}</div>
+                                                <div className="font-semibold text-slate-900 flex items-center gap-2">
+                                                    {s.name}
+                                                    {alert && (
+                                                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full text-white shadow ${alert === "today" ? "bg-gradient-to-r from-pink-500 to-rose-500 animate-pulse" : "bg-gradient-to-r from-amber-500 to-orange-500"}`}>
+                                                            {alert === "today" ? "🎂 Birthday Today" : "🎈 Tomorrow"}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="text-xs text-slate-500">{s.gender} • DOB: {s.dob || "—"}</div>
                                             </div>
                                         </div>
@@ -126,7 +204,8 @@ export default function StudentsPage() {
                                         )}
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                             {filtered.length === 0 && (
                                 <tr><td colSpan={7} className="py-12 text-center text-slate-500">
                                     <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
