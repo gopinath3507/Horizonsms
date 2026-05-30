@@ -135,7 +135,7 @@ export default function Layout() {
                         </div>
                     </div>
                 </header>
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in-up">
+                <main className="flex-1 px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-4 sm:pb-6 lg:pb-8 animate-fade-in-up">
                     <Outlet />
                 </main>
             </div>
