@@ -1,0 +1,99 @@
+{
+  "theme": "light",
+  "archetype": "Archetype 6: Vibrant Play mixed with Archetype 4: Swiss & High-Contrast",
+  "design_philosophy": "A perfect balance of professional utility for admins and joyful vibrancy suited for a pre-school. The UI relies on a neutral gray/white base to ensure data legibility (high contrast), while utilizing the brand's Deep Indigo and Warm Orange for structure and primary actions. Dashboard widgets and decorative elements inject additional vivid, colorful accents to make the experience feel 'ultra-modern' and 'playful'.",
+  "colors": {
+    "primary": "#4A3FBF",
+    "primary_hover": "#3a3199",
+    "secondary": "#F39C2A",
+    "secondary_hover": "#d9871e",
+    "background": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "text_main": "#0F172A",
+    "text_muted": "#64748B",
+    "border": "#E2E8F0",
+    "accents": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6",
+      "colorful_blue": "#0EA5E9",
+      "colorful_pink": "#EC4899",
+      "colorful_purple": "#8B5CF6",
+      "colorful_teal": "#14B8A6"
+    }
+  },
+  "typography": {
+    "headings_font": "Outfit, sans-serif",
+    "body_font": "Manrope, sans-serif",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight text-slate-900",
+      "h3": "text-xl sm:text-2xl font-semibold text-slate-800",
+      "h4": "text-lg font-semibold text-slate-800",
+      "body": "text-base text-slate-600 leading-relaxed",
+      "small": "text-sm text-slate-500",
+      "overline": "text-xs font-bold uppercase tracking-widest text-primary"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-6 sm:p-8 lg:p-12",
+    "grid_gap": "gap-6 sm:gap-8",
+    "card_radius": "rounded-2xl",
+    "button_radius": "rounded-xl",
+    "input_radius": "rounded-xl",
+    "dashboard_grid": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
+    "card_padding": "p-6"
+  },
+  "surface_strategies": {
+    "cards": "bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200",
+    "dashboard_metric_cards": "bg-white border border-slate-200 shadow-sm rounded-2xl p-6 relative overflow-hidden group",
+    "sidebar": "bg-[#4A3FBF] text-white border-r border-indigo-900",
+    "topbar": "bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50",
+    "login_card": "bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl p-10"
+  },
+  "motion_and_interactions": {
+    "hover_state": "transform -translate-y-1 transition-all duration-200",
+    "active_state": "scale-95",
+    "entrance": "fade-in slide-in-from-bottom-4 duration-500 ease-out",
+    "sidebar_links": "hover:bg-white/10 hover:text-white transition-colors duration-200"
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#4A3FBF] text-white hover:bg-[#3a3199] shadow-sm font-semibold rounded-xl px-6 py-2.5",
+      "secondary": "bg-[#F39C2A] text-white hover:bg-[#d9871e] shadow-sm font-semibold rounded-xl px-6 py-2.5",
+      "outline": "border-2 border-slate-200 bg-transparent text-slate-700 hover:border-[#4A3FBF] hover:text-[#4A3FBF] rounded-xl px-6 py-2.5"
+    },
+    "inputs": "bg-slate-50 border border-slate-200 focus:border-[#4A3FBF] focus:ring-2 focus:ring-[#4A3FBF]/20 rounded-xl px-4 py-2 text-slate-900",
+    "tables": "w-full border-collapse text-left text-sm text-slate-600. Headers: bg-slate-50 text-slate-700 font-bold py-4 px-4. Cells: border-b border-slate-100 py-3 px-4.",
+    "badges": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+  },
+  "media": {
+    "logo_url": "https://customer-assets.emergentagent.com/job_d36639f8-a3b4-44b2-9bb7-fc1d3aa4d809/artifacts/wliplyag_Logo%20nn.png",
+    "images": [
+      {
+        "category": "login_background",
+        "url": "https://images.pexels.com/photos/4253054/pexels-photo-4253054.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Vibrant abstract design with geometric shapes in blue and yellow hues. Perfect for the login page background to give it a modern, playful feel while allowing the white login card to pop."
+      }
+    ]
+  },
+  "page_specific_rules": {
+    "login_page": "Must feature the school logo prominently (large size) centered above the login form. Use the geometric login_background image covering the full screen. The login card should be glassmorphic (bg-white/90 backdrop-blur) to create depth against the colorful background.",
+    "dashboard": "The header/top-bar MUST display the logo prominently. Use a 'bento box' layout for macro analytics (Total Students, Attendance, Fees). Make the metric cards colorful—assign a distinct accent color (pink, teal, blue, yellow) as a thin border, icon background, or soft card background to each key metric card. Include a welcome banner that is lively and engaging.",
+    "student_information_system": "Use a robust table/grid for the student directory. Profile pages should use a split layout: student photo/basic info on the left, and tabbed details (academic, attendance, emergency, billing) on the right.",
+    "attendance_tracker": "Calendar-driven UI. Use colorful status chips (Green for Present, Orange for Late, Red for Absent) to make it highly visual.",
+    "gradebook": "Dense data table layout. Keep colors minimal here to focus on numbers, using color only to highlight poor vs excellent grades.",
+    "billing": "Clean, high-contrast black-and-white print-ready aesthetic for the invoices. The dashboard view can use green accents for 'Paid' and red for 'Overdue'."
+  },
+  "instructions_to_main_agent": [
+    "Install and use 'Outfit' for headings and 'Manrope' for body text from Google Fonts via Tailwind configuration.",
+    "Use Lucide-React or @phosphor-icons/react for all UI icons.",
+    "Shadcn components MUST be customized to match the spacing and border-radius rules defined here (e.g., rounded-xl and rounded-2xl).",
+    "Ensure all interactive elements have data-testid attributes (e.g., data-testid='login-button').",
+    "Use the provided logo URL on the Login page (size: w-48 or larger) and Topbar/Sidebar (size: w-32). Do not use plain text for the logo.",
+    "Apply Recharts for any analytics graphs (e.g., revenue over time, attendance rates) using the primary/secondary and accent colors.",
+    "Use Indian Rupee (₹) for all currency displays.",
+    "Ensure sidebar uses Deep Indigo (#4A3FBF) with white text, and dashboard cards incorporate playful pastel accents to meet the user requirement for a 'colourful and modern UI'."
+  ]
+}
