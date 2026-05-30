@@ -48,6 +48,14 @@ export default function BillingPage() {
         catch (e) { toast.error(formatApiError(e)); }
     };
 
+    const printInvoice = () => {
+        const oldTitle = document.title;
+        document.title = `Invoice-${viewing?.invoice_no || ""}`;
+        window.print();
+        // Reset after print dialog closes
+        setTimeout(() => { document.title = oldTitle; }, 1000);
+    };
+
     const del = async (id) => {
         if (!window.confirm("Delete this invoice?")) return;
         try { await api.delete(`/invoices/${id}`); toast.success("Deleted"); load(); }
@@ -155,73 +163,160 @@ export default function BillingPage() {
                 </div>
             )}
 
-            {/* View invoice modal */}
+            {/* View invoice modal — colorful professional layout */}
             {viewing && !payOpen && (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 no-print" onClick={() => setViewing(null)}>
-                    <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[95vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()} data-testid="invoice-detail">
-                        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between no-print">
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4 invoice-print-root" onClick={() => setViewing(null)}>
+                    <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-2xl invoice-print-card" onClick={(e) => e.stopPropagation()} data-testid="invoice-detail">
+                        {/* Toolbar — hidden during print */}
+                        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between no-print z-10">
                             <h3 className="font-heading text-xl font-bold">Invoice {viewing.invoice_no}</h3>
                             <div className="flex gap-2">
-                                <button onClick={() => window.print()} className="px-3 py-2 rounded-xl bg-[#F39C2A] hover:bg-[#d9871e] text-white text-sm font-semibold flex items-center gap-2"><Printer className="w-4 h-4" />Print / PDF</button>
+                                <button onClick={printInvoice} className="px-4 py-2 rounded-xl bg-[#F39C2A] hover:bg-[#d9871e] text-white text-sm font-semibold flex items-center gap-2 shadow-md" data-testid="print-invoice-btn"><Printer className="w-4 h-4" />Print / Save PDF</button>
                                 {user?.role === "admin" && <button onClick={() => del(viewing.id)} className="px-3 py-2 rounded-xl bg-red-50 text-red-700 text-sm font-semibold">Delete</button>}
                                 <button onClick={() => setViewing(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5" /></button>
                             </div>
                         </div>
-                        <div className="p-8">
-                            <div className="flex items-start justify-between mb-6 pb-6 border-b">
-                                <div className="flex items-center gap-3">
-                                    <img src={LOGO_URL} alt="logo" className="w-20 h-20 object-contain" />
-                                    <div>
-                                        <h2 className="font-heading text-xl font-extrabold text-[#4A3FBF]">{SCHOOL.name}</h2>
-                                        <p className="text-xs text-slate-500 max-w-xs">{SCHOOL.address}</p>
-                                        <p className="text-xs text-slate-500">{SCHOOL.phone} • {SCHOOL.email}</p>
+
+                        {/* PRINTABLE CONTENT */}
+                        <div className="p-0">
+                            {/* Top color band */}
+                            <div className="relative h-6 bg-gradient-to-r from-[#4A3FBF] via-[#7c3aed] to-[#F39C2A]" />
+
+                            {/* Header section */}
+                            <div className="px-8 sm:px-12 pt-8 pb-6 bg-gradient-to-b from-indigo-50/60 to-white">
+                                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                    <div className="flex items-start gap-4">
+                                        <img src={LOGO_URL} alt="logo" className="w-24 h-24 object-contain shrink-0" />
+                                        <div>
+                                            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#4A3FBF] leading-tight">{SCHOOL.name}</h2>
+                                            <p className="text-xs text-slate-600 max-w-sm mt-1 leading-relaxed">{SCHOOL.address}</p>
+                                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-700">
+                                                <span className="font-semibold">📞 {SCHOOL.phone}</span>
+                                                <span className="font-semibold">✉ {SCHOOL.email}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <div className="inline-block bg-[#4A3FBF] text-white px-5 py-2 rounded-xl font-heading text-2xl font-extrabold tracking-wider shadow-lg">INVOICE</div>
+                                        <div className="font-mono text-sm text-slate-700 font-bold mt-2">#{viewing.invoice_no}</div>
+                                        <div className="text-xs text-slate-500 mt-1">Issued: <span className="font-semibold text-slate-700">{viewing.issued_date}</span></div>
+                                        <div className="text-xs text-slate-500">Due: <span className="font-semibold text-[#F39C2A]">{viewing.due_date}</span></div>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="font-heading text-2xl font-extrabold">INVOICE</div>
-                                    <div className="font-mono text-sm text-slate-600">{viewing.invoice_no}</div>
-                                    <div className="text-xs text-slate-500 mt-2">Issued: {viewing.issued_date}</div>
-                                    <div className="text-xs text-slate-500">Due: {viewing.due_date}</div>
+                            </div>
+
+                            {/* Bill To + Summary cards */}
+                            <div className="px-8 sm:px-12 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                <div className="rounded-2xl border-l-4 border-[#4A3FBF] bg-indigo-50/70 p-5">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-[#4A3FBF]">Bill To</div>
+                                    <div className="font-heading text-lg font-extrabold text-slate-900 mt-1">{viewing.student_name}</div>
+                                    <div className="text-sm text-slate-600 mt-0.5">Class: <span className="font-semibold text-slate-800">{viewing.class_name}</span></div>
+                                </div>
+                                <div className="rounded-2xl border-l-4 border-[#F39C2A] bg-orange-50/70 p-5">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-[#F39C2A]">Amount Due</div>
+                                    <div className="font-heading text-2xl font-extrabold text-slate-900 mt-1">{formatINR(viewing.total - viewing.amount_paid)}</div>
+                                    <div className="text-sm text-slate-600 mt-0.5">Status: <span className={`font-bold ${viewing.status === "paid" ? "text-emerald-600" : viewing.status === "partial" ? "text-amber-600" : "text-red-600"}`}>{viewing.status.toUpperCase()}</span></div>
                                 </div>
                             </div>
-                            <div className="mb-6">
-                                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Bill To</div>
-                                <div className="font-semibold text-slate-900 mt-1">{viewing.student_name}</div>
-                                <div className="text-sm text-slate-600">Class: {viewing.class_name}</div>
-                            </div>
-                            <table className="w-full mb-6 text-sm">
-                                <thead className="bg-slate-50">
-                                    <tr><th className="text-left py-2 px-3">Description</th><th className="text-right py-2 px-3">Amount</th></tr>
-                                </thead>
-                                <tbody>
-                                    {viewing.items.map((it, i) => (
-                                        <tr key={i} className="border-t border-slate-100">
-                                            <td className="py-2 px-3">{it.description}</td>
-                                            <td className="py-2 px-3 text-right font-semibold">{formatINR(it.amount)}</td>
-                                        </tr>
-                                    ))}
-                                    <tr className="border-t-2 border-slate-300">
-                                        <td className="py-3 px-3 font-bold">Total</td>
-                                        <td className="py-3 px-3 text-right font-extrabold text-lg">{formatINR(viewing.total)}</td>
-                                    </tr>
-                                    <tr><td className="py-1 px-3 text-slate-600">Paid</td><td className="py-1 px-3 text-right text-emerald-600 font-semibold">{formatINR(viewing.amount_paid)}</td></tr>
-                                    <tr><td className="py-1 px-3 font-bold">Balance Due</td><td className="py-1 px-3 text-right font-bold text-red-600">{formatINR(viewing.total - viewing.amount_paid)}</td></tr>
-                                </tbody>
-                            </table>
-                            {viewing.payments?.length > 0 && (
-                                <div>
-                                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Payment History</div>
+
+                            {/* Line items table */}
+                            <div className="px-8 sm:px-12 mb-6">
+                                <div className="overflow-hidden rounded-2xl border border-slate-200">
                                     <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-gradient-to-r from-[#4A3FBF] to-[#7c3aed] text-white">
+                                                <th className="text-left py-3 px-5 font-bold uppercase tracking-wider text-xs">#</th>
+                                                <th className="text-left py-3 px-5 font-bold uppercase tracking-wider text-xs">Description</th>
+                                                <th className="text-right py-3 px-5 font-bold uppercase tracking-wider text-xs">Amount</th>
+                                            </tr>
+                                        </thead>
                                         <tbody>
-                                            {viewing.payments.map((p) => (
-                                                <tr key={p.id} className="border-t border-slate-100"><td className="py-1.5">{p.paid_at?.slice(0, 10)}</td><td className="capitalize">{p.method}</td><td className="text-xs text-slate-500">{p.reference || "—"}</td><td className="text-right font-semibold">{formatINR(p.amount)}</td></tr>
+                                            {viewing.items.map((it, i) => (
+                                                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                                                    <td className="py-3 px-5 text-slate-500 font-semibold">{i + 1}</td>
+                                                    <td className="py-3 px-5 text-slate-800">{it.description}</td>
+                                                    <td className="py-3 px-5 text-right font-bold text-slate-900">{formatINR(it.amount)}</td>
+                                                </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+
+                            {/* Totals */}
+                            <div className="px-8 sm:px-12 mb-6 flex justify-end">
+                                <div className="w-full sm:w-80 space-y-2">
+                                    <div className="flex justify-between text-sm text-slate-600 px-2">
+                                        <span>Subtotal</span><span className="font-semibold">{formatINR(viewing.total)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-emerald-700 px-2">
+                                        <span>Amount Paid</span><span className="font-semibold">- {formatINR(viewing.amount_paid)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-gradient-to-r from-[#4A3FBF] to-[#7c3aed] text-white shadow-lg">
+                                        <span className="font-heading font-bold text-base">Balance Due</span>
+                                        <span className="font-heading text-2xl font-extrabold">{formatINR(viewing.total - viewing.amount_paid)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Payment history */}
+                            {viewing.payments?.length > 0 && (
+                                <div className="px-8 sm:px-12 mb-6">
+                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Payment History</div>
+                                    <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-emerald-50 text-emerald-800">
+                                                <tr>
+                                                    <th className="text-left py-2 px-4 font-bold text-xs uppercase">Date</th>
+                                                    <th className="text-left py-2 px-4 font-bold text-xs uppercase">Method</th>
+                                                    <th className="text-left py-2 px-4 font-bold text-xs uppercase">Reference</th>
+                                                    <th className="text-right py-2 px-4 font-bold text-xs uppercase">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {viewing.payments.map((p) => (
+                                                    <tr key={p.id} className="border-t border-slate-100">
+                                                        <td className="py-2 px-4">{p.paid_at?.slice(0, 10)}</td>
+                                                        <td className="py-2 px-4 capitalize">{p.method}</td>
+                                                        <td className="py-2 px-4 text-xs text-slate-500 font-mono">{p.reference || "—"}</td>
+                                                        <td className="py-2 px-4 text-right font-bold text-emerald-700">{formatINR(p.amount)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             )}
-                            {viewing.notes && <div className="mt-6 text-sm text-slate-600 italic">Note: {viewing.notes}</div>}
-                            <div className="mt-8 pt-6 border-t text-center text-xs text-slate-500">Thank you for choosing {SCHOOL.short}. For queries: {SCHOOL.email}</div>
+
+                            {/* Notes */}
+                            {viewing.notes && (
+                                <div className="px-8 sm:px-12 mb-6">
+                                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                        <div className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">Note</div>
+                                        <div className="text-sm text-amber-900">{viewing.notes}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Footer */}
+                            <div className="px-8 sm:px-12 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs text-slate-600">
+                                <div>
+                                    <div className="font-bold uppercase tracking-widest text-slate-700 mb-1">Payment Methods</div>
+                                    <div>Cash · UPI · Card · Bank Transfer</div>
+                                    <div className="mt-2 italic">Please mention invoice no. <span className="font-mono font-bold">{viewing.invoice_no}</span> while paying.</div>
+                                </div>
+                                <div className="sm:text-right">
+                                    <div className="font-bold uppercase tracking-widest text-slate-700 mb-1">Authorised Signatory</div>
+                                    <div className="mt-6 border-t border-slate-300 inline-block pt-1 px-8 text-slate-500">for {SCHOOL.short}</div>
+                                </div>
+                            </div>
+
+                            {/* Bottom thank-you bar */}
+                            <div className="mt-6 px-8 sm:px-12 py-4 text-center bg-gradient-to-r from-[#4A3FBF] via-[#7c3aed] to-[#F39C2A] text-white">
+                                <div className="font-heading font-bold text-base">Thank you for choosing {SCHOOL.short} 💜</div>
+                                <div className="text-xs text-white/90 mt-0.5">For queries contact {SCHOOL.email} · {SCHOOL.phone}</div>
+                            </div>
+                            <div className="h-3 bg-gradient-to-r from-[#F39C2A] via-[#7c3aed] to-[#4A3FBF]" />
                         </div>
                     </div>
                 </div>

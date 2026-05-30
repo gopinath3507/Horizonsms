@@ -65,9 +65,40 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media print {
+    /* Force backgrounds and colors to print */
+    *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Hide everything by default in print */
     .no-print { display: none !important; }
     .print-only { display: block !important; }
-    body { background: white; }
+    html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+
+    /* Aggressively hide platform-injected overlays/badges */
+    iframe, [class*="made-with"], [class*="MadeWith"], [data-emergent], [id*="emergent"],
+    a[href*="emergent"], button[class*="emergent"], div[class*="emergent"],
+    .emergent-badge, #emergent-badge, .visual-edits-overlay { display: none !important; visibility: hidden !important; }
+
+    /* Use full page width for invoice */
+    .invoice-print-root {
+        position: static !important; inset: auto !important;
+        background: white !important; padding: 0 !important;
+        display: block !important; height: auto !important;
+    }
+    .invoice-print-card {
+        box-shadow: none !important; border-radius: 0 !important;
+        max-height: none !important; width: 100% !important;
+        max-width: 100% !important; overflow: visible !important;
+    }
+
+    /* Hide app shell during print */
+    aside, header, .app-shell-only { display: none !important; }
+    main { padding: 0 !important; }
+
+    @page { size: A4; margin: 10mm; }
 }
 
 .print-only { display: none; }
