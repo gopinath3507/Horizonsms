@@ -1,55 +1,30 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { formatINR, SCHOOL } from "@/constants/branding";
-import { Users, CalendarCheck2, IndianRupee, UserCog, TrendingUp, AlertCircle, Sparkles, GraduationCap, BookOpen, Clock } from "lucide-react";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell, Area, AreaChart } from "recharts";
+import { Users, CalendarCheck2, IndianRupee, UserCog, TrendingUp, AlertCircle, BookOpen, Clock, ArrowUpRight, Wallet, GraduationCap } from "lucide-react";
+import { ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell, Area, AreaChart } from "recharts";
 import { useAuth } from "@/lib/auth";
 
-// Each metric gets a unique vibrant glass color
+// Minimal modern metric cards — light, single subtle accent each
 const METRICS = [
-    {
-        key: "total_active_students", label: "Active Students", icon: Users,
-        bg: "from-pink-500/80 via-fuchsia-500/70 to-rose-500/80",
-        blob: "bg-pink-300",
-        iconBg: "bg-white/25",
-    },
-    {
-        key: "today_attendance_pct", label: "Today's Attendance", icon: CalendarCheck2,
-        bg: "from-emerald-500/85 via-teal-500/75 to-green-500/85",
-        blob: "bg-emerald-300",
-        iconBg: "bg-white/25",
-        suffix: "%",
-    },
-    {
-        key: "total_fees_billed", label: "Total Fees", icon: IndianRupee,
-        bg: "from-indigo-500/85 via-violet-500/80 to-purple-600/85",
-        blob: "bg-indigo-300",
-        iconBg: "bg-white/25",
-        currency: true,
-    },
-    {
-        key: "total_fees_collected", label: "Paid", icon: IndianRupee,
-        bg: "from-orange-500/85 via-amber-500/80 to-yellow-500/80",
-        blob: "bg-orange-300",
-        iconBg: "bg-white/25",
-        currency: true,
-    },
-    {
-        key: "total_fees_pending", label: "Balance", icon: IndianRupee,
-        bg: "from-rose-500/85 via-red-500/80 to-orange-500/85",
-        blob: "bg-rose-300",
-        iconBg: "bg-white/25",
-        currency: true,
-    },
-    {
-        key: "total_staff", label: "Total Staff", icon: UserCog,
-        bg: "from-sky-500/85 via-cyan-500/80 to-blue-500/85",
-        blob: "bg-sky-300",
-        iconBg: "bg-white/25",
-    },
+    { key: "total_active_students", label: "Active Students", icon: Users, accent: "indigo" },
+    { key: "today_attendance_pct", label: "Today's Attendance", icon: CalendarCheck2, accent: "emerald", suffix: "%" },
+    { key: "total_fees_billed", label: "Total Fees", icon: IndianRupee, accent: "violet", currency: true },
+    { key: "total_fees_collected", label: "Paid", icon: Wallet, accent: "teal", currency: true },
+    { key: "total_fees_pending", label: "Balance", icon: IndianRupee, accent: "amber", currency: true },
+    { key: "total_staff", label: "Total Staff", icon: UserCog, accent: "slate" },
 ];
 
-const CLASS_COLORS = ["#4A3FBF", "#F39C2A", "#10B981", "#0EA5E9", "#EC4899"];
+const ACCENT_MAP = {
+    indigo:  { iconBg: "bg-indigo-50",  iconText: "text-indigo-600",  ring: "ring-indigo-100" },
+    emerald: { iconBg: "bg-emerald-50", iconText: "text-emerald-600", ring: "ring-emerald-100" },
+    violet:  { iconBg: "bg-violet-50",  iconText: "text-violet-600",  ring: "ring-violet-100" },
+    teal:    { iconBg: "bg-teal-50",    iconText: "text-teal-600",    ring: "ring-teal-100" },
+    amber:   { iconBg: "bg-amber-50",   iconText: "text-amber-600",   ring: "ring-amber-100" },
+    slate:   { iconBg: "bg-slate-100",  iconText: "text-slate-600",   ring: "ring-slate-100" },
+};
+
+const CLASS_COLORS = ["#6366F1", "#10B981", "#F59E0B", "#0EA5E9", "#8B5CF6"];
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -63,7 +38,6 @@ export default function DashboardPage() {
             .catch((e) => setErr(e?.response?.data?.detail || "Failed to load stats"));
     }, []);
 
-    // LIVE IST clock — ticks every second using Asia/Kolkata timezone (Indian server time)
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
@@ -76,81 +50,63 @@ export default function DashboardPage() {
         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true, timeZone: "Asia/Kolkata",
     }).format(now);
 
+    const collectionRate = stats?.total_fees_billed
+        ? Math.round((stats.total_fees_collected / stats.total_fees_billed) * 100)
+        : 0;
+
     return (
-        <div className="space-y-6 sm:space-y-8 relative" data-testid="dashboard-page">
-            {/* Page-level colored backdrop blobs */}
-            <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-                <div className="absolute -top-20 right-1/4 w-[40vw] h-[40vw] rounded-full bg-violet-200/40 blur-3xl" />
-                <div className="absolute top-1/2 -left-32 w-[35vw] h-[35vw] rounded-full bg-orange-200/40 blur-3xl" />
-                <div className="absolute bottom-0 right-0 w-[30vw] h-[30vw] rounded-full bg-emerald-200/30 blur-3xl" />
-            </div>
-
-            {/* Welcome Banner - vibrant multi-color */}
-            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-10 shadow-2xl text-white">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#4A3FBF] via-[#7c3aed] to-[#F39C2A]" />
-                <div className="absolute -top-20 -left-10 w-80 h-80 rounded-full bg-pink-400/40 blur-3xl" />
-                <div className="absolute -bottom-10 right-1/4 w-72 h-72 rounded-full bg-cyan-300/30 blur-3xl" />
-                <div className="absolute inset-0 hero-grid-bg opacity-25" />
-
-                {/* LIVE IST clock card */}
-                <div className="absolute right-4 sm:right-6 top-4 sm:top-6 hidden sm:block bg-white/15 backdrop-blur-2xl rounded-2xl px-5 py-3 ring-1 ring-white/30 shadow-2xl text-right" data-testid="live-ist-clock">
-                    <div className="flex items-center gap-2 justify-end text-[10px] uppercase tracking-widest font-bold text-white/85">
-                        <span className="relative flex h-2 w-2">
-                            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                        </span>
-                        Live · IST (India)
+        <div className="space-y-6" data-testid="dashboard-page">
+            {/* Welcome banner — clean, single soft accent */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Welcome back</p>
+                        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 mt-1">Namaste, {user?.name?.split(" ")[0]}</h1>
+                        <p className="mt-1.5 text-sm text-slate-500 max-w-xl">Here's how <span className="font-semibold text-slate-700">{SCHOOL.short}</span> is doing today.</p>
                     </div>
-                    <div className="font-heading text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight mt-1" data-testid="live-ist-time">{istTime}</div>
-                    <div className="text-xs text-white/85 font-medium mt-0.5" data-testid="live-ist-date">{istDate}</div>
-                </div>
 
-                <div className="relative max-w-2xl">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs font-bold uppercase tracking-widest">
-                        <Sparkles className="w-3 h-3" /> Welcome back
-                    </div>
-                    <h1 className="font-heading text-3xl sm:text-5xl font-extrabold mt-3 leading-tight">Namaste, {user?.name?.split(" ")[0]} <span className="inline-block animate-pulse">👋</span></h1>
-                    <p className="mt-3 text-white/90 text-base sm:text-lg max-w-xl">Here's how <span className="font-bold">{SCHOOL.short}</span> is doing today — every child is learning, growing and shining.</p>
-                    {/* Mobile clock (visible only on small screens) */}
-                    <div className="sm:hidden mt-4 inline-flex items-center gap-2 bg-white/15 backdrop-blur-xl rounded-2xl px-4 py-2 ring-1 ring-white/30">
-                        <Clock className="w-4 h-4" />
-                        <span className="font-heading font-bold tabular-nums">{istTime}</span>
-                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">IST</span>
+                    {/* Compact LIVE IST clock */}
+                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3" data-testid="live-ist-clock">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
+                            <Clock className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold text-slate-500">
+                                <span className="relative flex h-1.5 w-1.5">
+                                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                </span>
+                                Live · IST
+                            </div>
+                            <div className="font-heading text-xl font-bold tabular-nums text-slate-900" data-testid="live-ist-time">{istTime}</div>
+                            <div className="text-[11px] text-slate-500" data-testid="live-ist-date">{istDate}</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {err && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
                     <AlertCircle className="w-4 h-4" />{err}
                 </div>
             )}
 
-            {/* Colourful glass metric cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+            {/* Metric cards — minimal, modern, white */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 {METRICS.map((m) => {
                     const val = stats?.[m.key] ?? 0;
+                    const a = ACCENT_MAP[m.accent];
                     return (
-                        <div key={m.key} className="relative overflow-hidden rounded-3xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 duration-300 group h-40" data-testid={`metric-${m.key}`}>
-                            {/* Gradient base */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${m.bg}`} />
-                            {/* Decorative blobs */}
-                            <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full ${m.blob} opacity-40 blur-2xl group-hover:scale-125 transition-transform duration-500`} />
-                            <div className={`absolute -left-10 -bottom-10 w-28 h-28 rounded-full ${m.blob} opacity-25 blur-2xl`} />
-                            {/* Glass overlay */}
-                            <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px]" />
-                            {/* Glass border highlight */}
-                            <div className="absolute inset-0 ring-1 ring-inset ring-white/30 rounded-3xl" />
-
-                            <div className="relative h-full p-5 flex flex-col justify-between text-white">
-                                <div className={`w-12 h-12 rounded-2xl ${m.iconBg} backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center shadow-lg`}>
-                                    <m.icon className="w-6 h-6" />
+                        <div key={m.key} className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all p-5" data-testid={`metric-${m.key}`}>
+                            <div className="flex items-start justify-between">
+                                <div className={`w-10 h-10 rounded-xl ${a.iconBg} ${a.iconText} flex items-center justify-center ring-4 ${a.ring}`}>
+                                    <m.icon className="w-5 h-5" />
                                 </div>
-                                <div>
-                                    <div className="text-xs font-bold uppercase tracking-widest text-white/85">{m.label}</div>
-                                    <div className="font-heading text-3xl sm:text-4xl font-extrabold mt-1 drop-shadow">
-                                        {m.currency ? formatINR(val) : `${val}${m.suffix || ""}`}
-                                    </div>
+                            </div>
+                            <div className="mt-4">
+                                <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">{m.label}</div>
+                                <div className="font-heading text-2xl xl:text-[1.6rem] font-bold text-slate-900 mt-1 leading-tight">
+                                    {m.currency ? formatINR(val) : `${val}${m.suffix || ""}`}
                                 </div>
                             </div>
                         </div>
@@ -158,100 +114,102 @@ export default function DashboardPage() {
                 })}
             </div>
 
-            {/* Charts row - glass cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 relative overflow-hidden rounded-3xl p-6 shadow-xl">
-                    <div className="absolute inset-0 bg-gradient-to-br from-sky-100/90 via-white to-indigo-100/90" />
-                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-sky-300/30 blur-3xl" />
-                    <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-indigo-300/30 blur-3xl" />
-                    <div className="absolute inset-0 ring-1 ring-inset ring-white/50 rounded-3xl" />
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-                                <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500 flex items-center justify-center shadow-md"><TrendingUp className="w-5 h-5 text-white" /></span>
-                                Attendance Trend (7 days)
-                            </h3>
-                            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">LIVE</span>
+            {/* Charts row */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center ring-4 ring-indigo-50/60">
+                                <TrendingUp className="w-4.5 h-4.5" />
+                            </div>
+                            <div>
+                                <h3 className="font-heading text-base font-semibold text-slate-900">Attendance Trend</h3>
+                                <p className="text-xs text-slate-500">Last 7 days · daily present rate</p>
+                            </div>
                         </div>
-                        <ResponsiveContainer width="100%" height={260}>
-                            <AreaChart data={stats?.attendance_trend || []}>
-                                <defs>
-                                    <linearGradient id="attGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#4A3FBF" stopOpacity={0.6} />
-                                        <stop offset="100%" stopColor="#4A3FBF" stopOpacity={0.05} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#64748B" }} />
-                                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} domain={[0, 100]} />
-                                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0" }} />
-                                <Area type="monotone" dataKey="rate" stroke="#4A3FBF" strokeWidth={3} fill="url(#attGrad)" />
-                                <Line type="monotone" dataKey="rate" stroke="#F39C2A" strokeWidth={0} dot={{ r: 5, fill: "#F39C2A", stroke: "#fff", strokeWidth: 2 }} />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">LIVE</span>
                     </div>
+                    <ResponsiveContainer width="100%" height={240}>
+                        <AreaChart data={stats?.attendance_trend || []} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="attGradMin" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#6366F1" stopOpacity={0.25} />
+                                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} domain={[0, 100]} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12 }} />
+                            <Area type="monotone" dataKey="rate" stroke="#6366F1" strokeWidth={2.5} fill="url(#attGradMin)" dot={{ r: 3, fill: "#6366F1" }} activeDot={{ r: 5 }} />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </div>
 
-                <div className="relative overflow-hidden rounded-3xl p-6 shadow-xl">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-100/90 via-white to-pink-100/90" />
-                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-orange-300/30 blur-3xl" />
-                    <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-pink-300/30 blur-3xl" />
-                    <div className="absolute inset-0 ring-1 ring-inset ring-white/50 rounded-3xl" />
-                    <div className="relative">
-                        <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center shadow-md"><GraduationCap className="w-5 h-5 text-white" /></span>
-                            By Class
-                        </h3>
-                        <ResponsiveContainer width="100%" height={260}>
-                            <BarChart data={stats?.students_by_class || []}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                <XAxis dataKey="class_name" tick={{ fontSize: 10, fill: "#64748B" }} />
-                                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} allowDecimals={false} />
-                                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0" }} />
-                                <Bar dataKey="count" radius={[10, 10, 0, 0]}>
-                                    {(stats?.students_by_class || []).map((_, i) => (
-                                        <Cell key={i} fill={CLASS_COLORS[i % CLASS_COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center ring-4 ring-violet-50/60">
+                            <GraduationCap className="w-4.5 h-4.5" />
+                        </div>
+                        <div>
+                            <h3 className="font-heading text-base font-semibold text-slate-900">Students by Class</h3>
+                            <p className="text-xs text-slate-500">Active enrollment</p>
+                        </div>
                     </div>
+                    <ResponsiveContainer width="100%" height={240}>
+                        <BarChart data={stats?.students_by_class || []} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                            <XAxis dataKey="class_name" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} allowDecimals={false} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12 }} cursor={{ fill: "#F8FAFC" }} />
+                            <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={42}>
+                                {(stats?.students_by_class || []).map((_, i) => (
+                                    <Cell key={i} fill={CLASS_COLORS[i % CLASS_COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 
-            {/* Quick stats row - colorful glass */}
+            {/* Quick stats — minimal, monochrome with single accent each */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {[
                     {
-                        bg: "from-emerald-400 to-teal-500", blob: "bg-emerald-200",
-                        label: "Today Present", value: stats?.today_present ?? 0,
-                        sub: `of ${stats?.today_total ?? 0} records`, icon: CalendarCheck2,
+                        accent: "emerald", label: "Today Present",
+                        value: stats?.today_present ?? 0, sub: `of ${stats?.today_total ?? 0} marked`, icon: CalendarCheck2,
                     },
                     {
-                        bg: "from-sky-400 to-indigo-500", blob: "bg-sky-200",
-                        label: "Collection Rate", value: stats?.total_fees_billed ? `${Math.round((stats.total_fees_collected / stats.total_fees_billed) * 100)}%` : "—",
-                        sub: `${formatINR(stats?.total_fees_collected)} of ${formatINR(stats?.total_fees_billed)}`, icon: IndianRupee,
+                        accent: "indigo", label: "Collection Rate",
+                        value: `${collectionRate}%`,
+                        sub: `${formatINR(stats?.total_fees_collected)} of ${formatINR(stats?.total_fees_billed)}`, icon: Wallet,
                     },
                     {
-                        bg: "from-violet-500 to-fuchsia-500", blob: "bg-violet-200",
-                        label: "Programs Offered", value: "5 Classes", sub: "Day-Care • Pre-Nursery • Nursery • LKG • UKG", icon: BookOpen,
+                        accent: "violet", label: "Programs Offered",
+                        value: "5 Classes", sub: "Day-Care · Pre-Nursery · Nursery · LKG · UKG", icon: BookOpen,
                     },
-                ].map((q, i) => (
-                    <div key={i} className="relative overflow-hidden rounded-3xl p-6 shadow-xl group hover:-translate-y-1 transition-all duration-300 text-white">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${q.bg}`} />
-                        <div className={`absolute -right-8 -top-8 w-28 h-28 rounded-full ${q.blob} opacity-40 blur-2xl group-hover:scale-125 transition-transform`} />
-                        <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px]" />
-                        <div className="absolute inset-0 ring-1 ring-inset ring-white/30 rounded-3xl" />
-                        <div className="relative flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                                <div className="text-xs uppercase tracking-widest font-bold text-white/90">{q.label}</div>
-                                <div className="font-heading text-2xl sm:text-3xl font-extrabold mt-1 drop-shadow truncate">{q.value}</div>
-                                <div className="text-xs text-white/85 mt-1">{q.sub}</div>
+                ].map((q, i) => {
+                    const a = ACCENT_MAP[q.accent];
+                    return (
+                        <div key={i} className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all p-5">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">{q.label}</div>
+                                    <div className="font-heading text-2xl font-bold text-slate-900 mt-1 truncate">{q.value}</div>
+                                    <div className="text-xs text-slate-500 mt-1">{q.sub}</div>
+                                </div>
+                                <div className={`w-10 h-10 shrink-0 rounded-xl ${a.iconBg} ${a.iconText} flex items-center justify-center ring-4 ${a.ring}`}>
+                                    <q.icon className="w-5 h-5" />
+                                </div>
                             </div>
-                            <div className="w-11 h-11 shrink-0 rounded-2xl bg-white/25 backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center"><q.icon className="w-5 h-5" /></div>
+                            {q.accent === "indigo" && (
+                                <div className="mt-4 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${collectionRate}%` }} />
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
