@@ -47,8 +47,8 @@ export default function Layout() {
                             <img src={LOGO_URL} alt="Horizon" className="w-10 h-10 object-contain" />
                         </div>
                         <div>
-                            <div className="font-heading font-extrabold text-base leading-tight">Horizon</div>
-                            <div className="text-xs text-white/80 leading-tight">Tech Play School</div>
+                            <div className="text-[10px] uppercase tracking-widest font-bold text-[#FFD580]">Branch</div>
+                            <div className="font-heading font-extrabold text-base leading-tight tracking-wide">TIRUMALAPURA</div>
                         </div>
                     </div>
 
@@ -119,9 +119,10 @@ export default function Layout() {
                             {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
                         <div className="flex items-center gap-3 min-w-0">
+                            <img src={LOGO_URL} alt="Horizon" className="w-12 h-12 object-contain shrink-0" />
                             <div className="min-w-0">
                                 <div className="font-heading font-bold text-slate-900 text-sm sm:text-base leading-tight truncate">{SCHOOL.name}</div>
-                                <div className="text-xs text-slate-500 hidden sm:block">Bengaluru, Karnataka</div>
+                                <div className="text-xs text-slate-500 hidden sm:block">Thirumalapura, Bangalore, Karnataka</div>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
