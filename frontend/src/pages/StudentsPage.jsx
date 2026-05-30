@@ -157,7 +157,9 @@ export default function StudentsPage() {
                                 <th className="text-left py-4 px-4 font-bold">Class</th>
                                 <th className="text-left py-4 px-4 font-bold">Parent</th>
                                 <th className="text-left py-4 px-4 font-bold">Contact</th>
-                                <th className="text-left py-4 px-4 font-bold">Fee/mo</th>
+                                <th className="text-right py-4 px-4 font-bold">Total Fees</th>
+                                <th className="text-right py-4 px-4 font-bold">Paid</th>
+                                <th className="text-right py-4 px-4 font-bold">Balance</th>
                                 <th className="text-left py-4 px-4 font-bold">Status</th>
                                 <th className="text-right py-4 px-4 font-bold">Actions</th>
                             </tr>
@@ -193,7 +195,11 @@ export default function StudentsPage() {
                                     <td className="py-3 px-4"><span className="px-2.5 py-1 rounded-full bg-indigo-50 text-[#4A3FBF] text-xs font-bold">{s.class_name}</span></td>
                                     <td className="py-3 px-4">{s.parent_name || "—"}</td>
                                     <td className="py-3 px-4 text-slate-600">{s.parent_phone || "—"}</td>
-                                    <td className="py-3 px-4 font-semibold">{formatINR(s.monthly_fee)}</td>
+                                    <td className="py-3 px-4 text-right font-bold text-slate-900" data-testid={`total-fees-${s.id}`}>{formatINR(s.total_billed || 0)}</td>
+                                    <td className="py-3 px-4 text-right font-semibold text-emerald-600" data-testid={`paid-${s.id}`}>{formatINR(s.total_paid || 0)}</td>
+                                    <td className="py-3 px-4 text-right font-bold" data-testid={`balance-${s.id}`}>
+                                        <span className={`${(s.balance || 0) > 0 ? "text-red-600" : "text-slate-400"}`}>{formatINR(s.balance || 0)}</span>
+                                    </td>
                                     <td className="py-3 px-4">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${s.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{s.status}</span>
                                     </td>
@@ -207,7 +213,7 @@ export default function StudentsPage() {
                                 );
                             })}
                             {filtered.length === 0 && (
-                                <tr><td colSpan={7} className="py-12 text-center text-slate-500">
+                                <tr><td colSpan={9} className="py-12 text-center text-slate-500">
                                     <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
                                     No students yet. Click "Enroll Student" to add one.
                                 </td></tr>

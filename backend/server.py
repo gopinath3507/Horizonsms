@@ -302,8 +302,18 @@ async def list_students(class_name: Optional[str] = None, status_filter: Optiona
     q: Dict[str, Any] = {}
     if class_name: q["class_name"] = class_name
     if status_filter: q["status"] = status_filter
-    cur = db.students.find(q, {"_id": 0}).sort("name", 1)
-    return [s async for s in cur]
+    students = [s async for s in db.students.find(q, {"_id": 0}).sort("name", 1)]
+    # Aggregate billing per student
+    pipeline = [{"$group": {"_id": "$student_id", "total_billed": {"$sum": "$total"}, "total_paid": {"$sum": "$amount_paid"}}}]
+    bill_map: Dict[str, Dict[str, float]] = {}
+    async for r in db.invoices.aggregate(pipeline):
+        bill_map[r["_id"]] = {"total_billed": float(r.get("total_billed", 0) or 0), "total_paid": float(r.get("total_paid", 0) or 0)}
+    for s in students:
+        b = bill_map.get(s["id"], {"total_billed": 0.0, "total_paid": 0.0})
+        s["total_billed"] = round(b["total_billed"], 2)
+        s["total_paid"] = round(b["total_paid"], 2)
+        s["balance"] = round(b["total_billed"] - b["total_paid"], 2)
+    return students
 
 @api.post("/students")
 async def create_student(data: StudentIn, _: dict = Depends(get_current_user)):
@@ -608,9 +618,11 @@ async def dashboard_stats(_: dict = Depends(get_current_user)):
     attendance_pct = round(today_present / today_total * 100, 1) if today_total else 0
 
     # fees aggregate
+    total_billed = 0.0
     total_collected = 0.0
     total_pending = 0.0
     async for inv in db.invoices.find({}, {"_id": 0, "total": 1, "amount_paid": 1, "status": 1}):
+        total_billed += inv.get("total", 0.0)
         total_collected += inv.get("amount_paid", 0.0)
         total_pending += max(0.0, inv.get("total", 0.0) - inv.get("amount_paid", 0.0))
 
@@ -636,6 +648,7 @@ async def dashboard_stats(_: dict = Depends(get_current_user)):
         "today_attendance_pct": attendance_pct,
         "today_present": today_present,
         "today_total": today_total,
+        "total_fees_billed": round(total_billed, 2),
         "total_fees_collected": round(total_collected, 2),
         "total_fees_pending": round(total_pending, 2),
         "students_by_class": by_class,

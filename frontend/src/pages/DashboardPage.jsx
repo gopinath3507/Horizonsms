@@ -21,16 +21,30 @@ const METRICS = [
         suffix: "%",
     },
     {
-        key: "total_fees_collected", label: "Fees Collected", icon: IndianRupee,
+        key: "total_fees_billed", label: "Total Fees", icon: IndianRupee,
+        bg: "from-indigo-500/85 via-violet-500/80 to-purple-600/85",
+        blob: "bg-indigo-300",
+        iconBg: "bg-white/25",
+        currency: true,
+    },
+    {
+        key: "total_fees_collected", label: "Paid", icon: IndianRupee,
         bg: "from-orange-500/85 via-amber-500/80 to-yellow-500/80",
         blob: "bg-orange-300",
         iconBg: "bg-white/25",
         currency: true,
     },
     {
+        key: "total_fees_pending", label: "Balance", icon: IndianRupee,
+        bg: "from-rose-500/85 via-red-500/80 to-orange-500/85",
+        blob: "bg-rose-300",
+        iconBg: "bg-white/25",
+        currency: true,
+    },
+    {
         key: "total_staff", label: "Total Staff", icon: UserCog,
-        bg: "from-indigo-500/85 via-violet-500/80 to-purple-600/85",
-        blob: "bg-indigo-300",
+        bg: "from-sky-500/85 via-cyan-500/80 to-blue-500/85",
+        blob: "bg-sky-300",
         iconBg: "bg-white/25",
     },
 ];
@@ -113,7 +127,7 @@ export default function DashboardPage() {
             )}
 
             {/* Colourful glass metric cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
                 {METRICS.map((m) => {
                     const val = stats?.[m.key] ?? 0;
                     return (
@@ -214,8 +228,9 @@ export default function DashboardPage() {
                         sub: `of ${stats?.today_total ?? 0} records`, icon: CalendarCheck2,
                     },
                     {
-                        bg: "from-rose-400 to-orange-500", blob: "bg-rose-200",
-                        label: "Fees Pending", value: formatINR(stats?.total_fees_pending), sub: "Across all invoices", icon: IndianRupee,
+                        bg: "from-sky-400 to-indigo-500", blob: "bg-sky-200",
+                        label: "Collection Rate", value: stats?.total_fees_billed ? `${Math.round((stats.total_fees_collected / stats.total_fees_billed) * 100)}%` : "—",
+                        sub: `${formatINR(stats?.total_fees_collected)} of ${formatINR(stats?.total_fees_billed)}`, icon: IndianRupee,
                     },
                     {
                         bg: "from-violet-500 to-fuchsia-500", blob: "bg-violet-200",
