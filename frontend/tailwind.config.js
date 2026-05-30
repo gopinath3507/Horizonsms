@@ -8,9 +8,9 @@ module.exports = {
   theme: {
         extend: {
                 fontFamily: {
-                    heading: ['Outfit', 'sans-serif'],
-                    body: ['Manrope', 'sans-serif'],
-                    sans: ['Manrope', 'sans-serif'],
+                    heading: ['"Bricolage Grotesque"', 'sans-serif'],
+                    body: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    sans: ['"Plus Jakarta Sans"', 'sans-serif'],
                 },
                 borderRadius: {
                         lg: 'var(--radius)',
