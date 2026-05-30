@@ -197,7 +197,7 @@ async def startup_event():
             "id": new_id(),
             "email": admin_email,
             "password_hash": hash_password(admin_password),
-            "name": "School Administrator",
+            "name": "Admin",
             "role": "admin",
             "phone": "+91 7353101553",
             "created_at": now_iso(),
@@ -208,6 +208,9 @@ async def startup_event():
         if not verify_password(admin_password, existing.get("password_hash", "")):
             await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
             logger.info("Updated admin password to match .env")
+        # Migrate old display name to short form
+        if existing.get("name") == "School Administrator":
+            await db.users.update_one({"email": admin_email}, {"$set": {"name": "Admin"}})
 
 
 @app.on_event("shutdown")
