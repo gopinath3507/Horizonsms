@@ -20,9 +20,15 @@ export default function AttendancePage() {
 
     const load = async () => {
         try {
-            const { data: studs } = await api.get(`/students?class_name=${encodeURIComponent(className)}&status_filter=active`);
+            const studsUrl = className
+                ? `/students?class_name=${encodeURIComponent(className)}&status_filter=active`
+                : `/students?status_filter=active`;
+            const { data: studs } = await api.get(studsUrl);
             setStudents(studs);
-            const { data: existing } = await api.get(`/attendance?date=${date}&class_name=${encodeURIComponent(className)}`);
+            const attUrl = className
+                ? `/attendance?date=${date}&class_name=${encodeURIComponent(className)}`
+                : `/attendance?date=${date}`;
+            const { data: existing } = await api.get(attUrl);
             const m = {};
             existing.forEach((a) => { m[a.student_id] = a.status; });
             setMarks(m);
@@ -67,6 +73,7 @@ export default function AttendancePage() {
                 <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-600">Class</label>
                     <select value={className} onChange={(e) => setClassName(e.target.value)} className="mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#4A3FBF]" data-testid="attendance-class">
+                        <option value="">All Classes</option>
                         {CLASS_OPTIONS.map((c) => <option key={c}>{c}</option>)}
                     </select>
                 </div>
@@ -102,7 +109,10 @@ export default function AttendancePage() {
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4A3FBF] to-[#F39C2A] flex items-center justify-center text-white font-bold">{s.name?.[0]?.toUpperCase()}</div>
                                         <div>
-                                            <div className="font-semibold text-slate-900">{s.name}</div>
+                                            <div className="font-semibold text-slate-900 flex items-center gap-2">
+                                                {s.name}
+                                                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[#4A3FBF] text-[10px] font-bold uppercase tracking-wider">{s.class_name}</span>
+                                            </div>
                                             <div className="text-xs text-slate-500">{s.parent_name || "—"}</div>
                                         </div>
                                     </div>
@@ -124,7 +134,7 @@ export default function AttendancePage() {
                             </tr>
                         ))}
                         {students.length === 0 && (
-                            <tr><td colSpan={2} className="py-12 text-center text-slate-500">No active students in {className}.</td></tr>
+                            <tr><td colSpan={2} className="py-12 text-center text-slate-500">No active students {className ? `in ${className}` : "found"}.</td></tr>
                         )}
                     </tbody>
                 </table>
