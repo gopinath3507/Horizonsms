@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { formatINR, LOGO_URL, SCHOOL } from "@/constants/branding";
-import { Users, CalendarCheck2, IndianRupee, UserCog, TrendingUp, AlertCircle, Sparkles, GraduationCap, BookOpen } from "lucide-react";
+import { formatINR, SCHOOL } from "@/constants/branding";
+import { Users, CalendarCheck2, IndianRupee, UserCog, TrendingUp, AlertCircle, Sparkles, GraduationCap, BookOpen, Clock } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell, Area, AreaChart } from "recharts";
 import { useAuth } from "@/lib/auth";
 
@@ -41,12 +41,26 @@ export default function DashboardPage() {
     const { user } = useAuth();
     const [stats, setStats] = useState(null);
     const [err, setErr] = useState("");
+    const [now, setNow] = useState(new Date());
 
     useEffect(() => {
         api.get("/dashboard/stats")
             .then(({ data }) => setStats(data))
             .catch((e) => setErr(e?.response?.data?.detail || "Failed to load stats"));
     }, []);
+
+    // LIVE IST clock — ticks every second using Asia/Kolkata timezone (Indian server time)
+    useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+
+    const istDate = new Intl.DateTimeFormat("en-IN", {
+        weekday: "long", day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Kolkata",
+    }).format(now);
+    const istTime = new Intl.DateTimeFormat("en-IN", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true, timeZone: "Asia/Kolkata",
+    }).format(now);
 
     return (
         <div className="space-y-6 sm:space-y-8 relative" data-testid="dashboard-page">
@@ -63,15 +77,32 @@ export default function DashboardPage() {
                 <div className="absolute -top-20 -left-10 w-80 h-80 rounded-full bg-pink-400/40 blur-3xl" />
                 <div className="absolute -bottom-10 right-1/4 w-72 h-72 rounded-full bg-cyan-300/30 blur-3xl" />
                 <div className="absolute inset-0 hero-grid-bg opacity-25" />
-                <div className="absolute right-6 top-6 hidden sm:block bg-white/20 backdrop-blur-2xl rounded-3xl p-4 ring-1 ring-white/30 shadow-2xl">
-                    <img src={LOGO_URL} alt="logo" className="w-20 h-20 object-contain" />
+
+                {/* LIVE IST clock card */}
+                <div className="absolute right-4 sm:right-6 top-4 sm:top-6 hidden sm:block bg-white/15 backdrop-blur-2xl rounded-2xl px-5 py-3 ring-1 ring-white/30 shadow-2xl text-right" data-testid="live-ist-clock">
+                    <div className="flex items-center gap-2 justify-end text-[10px] uppercase tracking-widest font-bold text-white/85">
+                        <span className="relative flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                        </span>
+                        Live · IST (India)
+                    </div>
+                    <div className="font-heading text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight mt-1" data-testid="live-ist-time">{istTime}</div>
+                    <div className="text-xs text-white/85 font-medium mt-0.5" data-testid="live-ist-date">{istDate}</div>
                 </div>
+
                 <div className="relative max-w-2xl">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs font-bold uppercase tracking-widest">
                         <Sparkles className="w-3 h-3" /> Welcome back
                     </div>
                     <h1 className="font-heading text-3xl sm:text-5xl font-extrabold mt-3 leading-tight">Namaste, {user?.name?.split(" ")[0]} <span className="inline-block animate-pulse">👋</span></h1>
                     <p className="mt-3 text-white/90 text-base sm:text-lg max-w-xl">Here's how <span className="font-bold">{SCHOOL.short}</span> is doing today — every child is learning, growing and shining.</p>
+                    {/* Mobile clock (visible only on small screens) */}
+                    <div className="sm:hidden mt-4 inline-flex items-center gap-2 bg-white/15 backdrop-blur-xl rounded-2xl px-4 py-2 ring-1 ring-white/30">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-heading font-bold tabular-nums">{istTime}</span>
+                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">IST</span>
+                    </div>
                 </div>
             </div>
 
