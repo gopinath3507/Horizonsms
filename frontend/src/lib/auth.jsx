@@ -21,11 +21,12 @@ export function AuthProvider({ children }) {
 
     useEffect(() => { fetchMe(); }, [fetchMe]);
 
-    const login = async (email, password) => {
+    const login = async (loginVal, password) => {
         setError("");
         try {
-            const { data } = await api.post("/auth/login", { email, password });
+            const { data } = await api.post("/auth/login", { login: loginVal, password });
             localStorage.setItem("hitps_token", data.access_token);
+            localStorage.setItem("hitps_last_role", JSON.stringify(data.user.role));
             setUser(data.user);
             return true;
         } catch (e) {

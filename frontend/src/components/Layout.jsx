@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { LOGO_URL, SCHOOL } from "@/constants/branding";
 import {
     LayoutDashboard, Users, CalendarCheck2, BookOpenCheck, Receipt,
-    UserCog, Wallet, LogOut, Menu, X, Sparkles
+    UserCog, Wallet, LogOut, Menu, X, Sparkles, Heart, BookOpen
 } from "lucide-react";
 
 // Each link uses a single PLAIN color for its active background
@@ -13,9 +13,15 @@ const navItems = [
     { to: "/students",   label: "Students",   icon: Users,           testid: "nav-students",   bg: "bg-sky-500"     },
     { to: "/attendance", label: "Attendance", icon: CalendarCheck2,  testid: "nav-attendance", bg: "bg-emerald-500" },
     { to: "/gradebook",  label: "Gradebook",  icon: BookOpenCheck,   testid: "nav-gradebook",  bg: "bg-amber-500"   },
+    { to: "/homework",   label: "Homework",   icon: BookOpen,        testid: "nav-homework",   bg: "bg-orange-500"  },
     { to: "/billing",    label: "Billing",    icon: Receipt,         testid: "nav-billing",    bg: "bg-rose-500"    },
     { to: "/staff",      label: "Staff",      icon: UserCog,         testid: "nav-staff",      bg: "bg-violet-500", adminOnly: true },
+    { to: "/parents",    label: "Parents",    icon: Heart,           testid: "nav-parents",    bg: "bg-pink-500",   adminOnly: true },
     { to: "/payroll",    label: "Payroll",    icon: Wallet,          testid: "nav-payroll",    bg: "bg-teal-500",   adminOnly: true },
+];
+
+const parentNavItems = [
+    { to: "/parent", label: "My Child", icon: Heart, testid: "nav-parent", bg: "bg-pink-500" },
 ];
 
 export default function Layout() {
@@ -23,7 +29,9 @@ export default function Layout() {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
 
-    const items = navItems.filter((i) => !i.adminOnly || user?.role === "admin");
+    const items = user?.role === "parent"
+        ? parentNavItems
+        : navItems.filter((i) => !i.adminOnly || user?.role === "admin");
     const handleLogout = () => { logout(); navigate("/login"); };
 
     return (

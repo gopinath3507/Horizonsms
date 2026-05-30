@@ -61,14 +61,15 @@ def new_id() -> str:
 # ---------- Models ----------
 class UserOut(BaseModel):
     id: str
-    email: EmailStr
-    name: str
-    role: Literal["admin", "staff"]
+    email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    name: str
+    role: Literal["admin", "staff", "parent"]
+    student_id: Optional[str] = None
     created_at: Optional[str] = None
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    login: str  # email or phone
     password: str
 
 class TokenOut(BaseModel):
@@ -88,6 +89,25 @@ class StaffUpdateIn(BaseModel):
     phone: Optional[str] = None
     role: Optional[Literal["staff", "admin"]] = None
     password: Optional[str] = None
+
+class ParentCreateIn(BaseModel):
+    phone: str
+    password: str
+    name: str
+    student_id: str
+
+class ParentUpdateIn(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    student_id: Optional[str] = None
+
+class HomeworkIn(BaseModel):
+    class_name: str
+    subject: str = "General"
+    title: str
+    description: Optional[str] = None
+    date: str  # YYYY-MM-DD
 
 CLASS_OPTIONS = ["Day-Care", "Pre-Nursery", "Nursery", "LKG", "UKG"]
 
@@ -180,14 +200,37 @@ def require_admin(user: dict = Depends(get_current_user)) -> dict:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
+def require_staff(user: dict = Depends(get_current_user)) -> dict:
+    if user.get("role") not in ("admin", "staff"):
+        raise HTTPException(status_code=403, detail="Staff access required")
+    return user
+
+def require_parent(user: dict = Depends(get_current_user)) -> dict:
+    if user.get("role") != "parent":
+        raise HTTPException(status_code=403, detail="Parent access required")
+    return user
+
 
 # ---------- Startup ----------
 @app.on_event("startup")
 async def startup_event():
-    await db.users.create_index("email", unique=True)
+    # Drop legacy email unique index if it exists (we now use a partial index allowing null)
+    try:
+        await db.users.drop_index("email_1")
+    except Exception:
+        pass
+    await db.users.create_index(
+        "email", unique=True,
+        partialFilterExpression={"email": {"$type": "string"}},
+    )
+    await db.users.create_index(
+        "phone", unique=True,
+        partialFilterExpression={"role": "parent"},
+    )
     await db.students.create_index("name")
     await db.attendance.create_index([("student_id", 1), ("date", 1)], unique=True)
     await db.invoices.create_index("student_id")
+    await db.homework.create_index([("class_name", 1), ("date", -1)])
 
     admin_email = os.environ["ADMIN_EMAIL"].lower()
     admin_password = os.environ["ADMIN_PASSWORD"]
@@ -237,27 +280,36 @@ async def school_info():
 # ---------- Auth ----------
 @api.post("/auth/login", response_model=TokenOut)
 async def login(data: LoginIn):
-    email = data.email.lower()
-    user = await db.users.find_one({"email": email})
+    login_val = data.login.strip().lower()
+    # Try email first, then phone (strip leading + and spaces for fuzzy matching)
+    user = await db.users.find_one({"email": login_val})
+    if not user:
+        # phone variants
+        phone_variants = [data.login.strip(), data.login.strip().lstrip("+"), data.login.strip().replace(" ", "")]
+        user = await db.users.find_one({"phone": {"$in": phone_variants}})
     if not user or not verify_password(data.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    token = create_access_token(user["id"], user["email"], user["role"])
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_access_token(user["id"], user.get("email") or user.get("phone") or user["id"], user["role"])
     user_out = UserOut(
-        id=user["id"], email=user["email"], name=user["name"],
-        role=user["role"], phone=user.get("phone"), created_at=user.get("created_at")
+        id=user["id"], email=user.get("email"), name=user["name"],
+        role=user["role"], phone=user.get("phone"), student_id=user.get("student_id"),
+        created_at=user.get("created_at"),
     )
     return TokenOut(access_token=token, user=user_out)
 
 @api.get("/auth/me", response_model=UserOut)
 async def me(user: dict = Depends(get_current_user)):
-    return UserOut(**user)
+    return UserOut(**{k: user.get(k) for k in ["id", "email", "phone", "name", "role", "student_id", "created_at"]})
 
 
 # ---------- Staff Management (Admin) ----------
 @api.get("/staff", response_model=List[UserOut])
 async def list_staff(_: dict = Depends(require_admin)):
-    cur = db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1)
-    return [UserOut(**u) async for u in cur]
+    cur = db.users.find({"role": {"$in": ["admin", "staff"]}}, {"_id": 0, "password_hash": 0}).sort("created_at", -1)
+    out = []
+    async for u in cur:
+        out.append(UserOut(**{k: u.get(k) for k in ["id", "email", "phone", "name", "role", "student_id", "created_at"]}))
+    return out
 
 @api.post("/staff", response_model=UserOut)
 async def create_staff(data: StaffCreateIn, _: dict = Depends(require_admin)):
@@ -280,20 +332,159 @@ async def update_staff(staff_id: str, data: StaffUpdateIn, _: dict = Depends(req
     if data.password: updates["password_hash"] = hash_password(data.password)
     if not updates:
         raise HTTPException(status_code=400, detail="No updates provided")
-    res = await db.users.update_one({"id": staff_id}, {"$set": updates})
+    res = await db.users.update_one({"id": staff_id, "role": {"$in": ["admin", "staff"]}}, {"$set": updates})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Staff not found")
     u = await db.users.find_one({"id": staff_id}, {"_id": 0, "password_hash": 0})
-    return UserOut(**u)
+    return UserOut(**{k: u.get(k) for k in ["id", "email", "phone", "name", "role", "student_id", "created_at"]})
 
 @api.delete("/staff/{staff_id}")
 async def delete_staff(staff_id: str, admin: dict = Depends(require_admin)):
     if staff_id == admin["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
-    res = await db.users.delete_one({"id": staff_id})
+    res = await db.users.delete_one({"id": staff_id, "role": {"$in": ["admin", "staff"]}})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Staff not found")
     return {"ok": True}
+
+
+# ---------- Parent Account Management (Admin only) ----------
+def _normalize_phone(p: str) -> str:
+    return p.strip().replace(" ", "")
+
+@api.get("/parents", response_model=List[UserOut])
+async def list_parents(_: dict = Depends(require_admin)):
+    cur = db.users.find({"role": "parent"}, {"_id": 0, "password_hash": 0}).sort("created_at", -1)
+    return [UserOut(**{k: u.get(k) for k in ["id", "email", "phone", "name", "role", "student_id", "created_at"]}) async for u in cur]
+
+@api.post("/parents", response_model=UserOut)
+async def create_parent(data: ParentCreateIn, _: dict = Depends(require_admin)):
+    phone = _normalize_phone(data.phone)
+    if await db.users.find_one({"phone": phone, "role": "parent"}):
+        raise HTTPException(status_code=400, detail="A parent with this phone already exists")
+    student = await db.students.find_one({"id": data.student_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    doc = {
+        "id": new_id(),
+        "phone": phone,
+        "password_hash": hash_password(data.password),
+        "name": data.name,
+        "role": "parent",
+        "student_id": data.student_id,
+        "created_at": now_iso(),
+    }
+    await db.users.insert_one(doc)
+    return UserOut(**{k: doc.get(k) for k in ["id", "email", "phone", "name", "role", "student_id", "created_at"]})
+
+@api.patch("/parents/{parent_id}", response_model=UserOut)
+async def update_parent(parent_id: str, data: ParentUpdateIn, _: dict = Depends(require_admin)):
+    updates: Dict[str, Any] = {}
+    if data.name is not None: updates["name"] = data.name
+    if data.phone is not None: updates["phone"] = _normalize_phone(data.phone)
+    if data.password: updates["password_hash"] = hash_password(data.password)
+    if data.student_id is not None:
+        student = await db.students.find_one({"id": data.student_id})
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        updates["student_id"] = data.student_id
+    if not updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+    res = await db.users.update_one({"id": parent_id, "role": "parent"}, {"$set": updates})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Parent not found")
+    u = await db.users.find_one({"id": parent_id}, {"_id": 0, "password_hash": 0})
+    return UserOut(**{k: u.get(k) for k in ["id", "email", "phone", "name", "role", "student_id", "created_at"]})
+
+@api.delete("/parents/{parent_id}")
+async def delete_parent(parent_id: str, _: dict = Depends(require_admin)):
+    res = await db.users.delete_one({"id": parent_id, "role": "parent"})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Parent not found")
+    return {"ok": True}
+
+
+# ---------- Homework (Admin/Staff post, Parent reads) ----------
+@api.get("/homework")
+async def list_homework(class_name: Optional[str] = None, date_from: Optional[str] = None, user: dict = Depends(get_current_user)):
+    q: Dict[str, Any] = {}
+    # If parent, force class to their child's class
+    if user.get("role") == "parent":
+        child = await db.students.find_one({"id": user.get("student_id")}, {"_id": 0})
+        if not child:
+            return []
+        q["class_name"] = child["class_name"]
+    elif class_name:
+        q["class_name"] = class_name
+    if date_from:
+        q["date"] = {"$gte": date_from}
+    cur = db.homework.find(q, {"_id": 0}).sort("date", -1)
+    return [h async for h in cur]
+
+@api.post("/homework")
+async def create_homework(data: HomeworkIn, user: dict = Depends(require_staff)):
+    doc = data.model_dump()
+    doc["id"] = new_id()
+    doc["created_by"] = user["id"]
+    doc["created_at"] = now_iso()
+    await db.homework.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api.delete("/homework/{hw_id}")
+async def delete_homework(hw_id: str, _: dict = Depends(require_staff)):
+    res = await db.homework.delete_one({"id": hw_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Homework not found")
+    return {"ok": True}
+
+
+# ---------- Parent self-service ----------
+@api.get("/parent/me/summary")
+async def parent_summary(user: dict = Depends(require_parent)):
+    sid = user.get("student_id")
+    if not sid:
+        raise HTTPException(status_code=400, detail="No student linked to your account. Contact admin.")
+    student = await db.students.find_one({"id": sid}, {"_id": 0})
+    if not student:
+        raise HTTPException(status_code=404, detail="Child record not found")
+    # Attendance (sorted by date desc)
+    attendance = [a async for a in db.attendance.find({"student_id": sid}, {"_id": 0}).sort("date", -1)]
+    # Invoices + billing summary
+    invoices = [i async for i in db.invoices.find({"student_id": sid}, {"_id": 0}).sort("created_at", -1)]
+    total_billed = sum(i.get("total", 0.0) for i in invoices)
+    total_paid = sum(i.get("amount_paid", 0.0) for i in invoices)
+    balance = max(0.0, total_billed - total_paid)
+    # Homework for child's class (latest 30)
+    homework = [h async for h in db.homework.find({"class_name": student["class_name"]}, {"_id": 0}).sort("date", -1).limit(30)]
+    # Grade report
+    grades = [g async for g in db.grades.find({"student_id": sid}, {"_id": 0})]
+    return {
+        "student": student,
+        "attendance": attendance,
+        "attendance_stats": _attendance_stats(attendance),
+        "billing": {
+            "invoices": invoices,
+            "total_billed": round(total_billed, 2),
+            "total_paid": round(total_paid, 2),
+            "balance": round(balance, 2),
+        },
+        "homework": homework,
+        "grades_count": len(grades),
+    }
+
+def _attendance_stats(records: list) -> dict:
+    total = len(records)
+    present = sum(1 for r in records if r.get("status") == "present")
+    absent = sum(1 for r in records if r.get("status") == "absent")
+    late = sum(1 for r in records if r.get("status") == "late")
+    return {
+        "total": total,
+        "present": present,
+        "absent": absent,
+        "late": late,
+        "present_pct": round((present / total * 100), 1) if total else 0,
+    }
 
 
 # ---------- Students ----------
