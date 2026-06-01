@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, formatApiError } from "@/lib/api";
-import { formatINR, LOGO_URL, SCHOOL } from "@/constants/branding";
+import { formatINR, LOGO_URL, ARIVU_LOGO_URL, SCHOOL } from "@/constants/branding";
 import { Plus, Receipt, Printer, X, IndianRupee, CreditCard } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast, Toaster } from "sonner";

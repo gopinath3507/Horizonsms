@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { LOGO_URL, SCHOOL } from "@/constants/branding";
+import { LOGO_URL, ARIVU_LOGO_URL, SCHOOL } from "@/constants/branding";
 import {
     LayoutDashboard, Users, CalendarCheck2, BookOpenCheck, Receipt,
     UserCog, Wallet, LogOut, Menu, X, Sparkles, Heart, BookOpen
@@ -129,6 +129,13 @@ export default function Layout() {
                             </div>
                             <div className="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold">
                                 {user?.name?.[0]?.toUpperCase()}
+                            </div>
+                            <div className="hidden sm:flex items-center gap-2 pl-3 ml-1 border-l border-slate-200" title="Arivu Foundation">
+                                <img src={ARIVU_LOGO_URL} alt="Arivu Foundation" className="w-10 h-10 object-contain" data-testid="arivu-logo-navbar" />
+                                <div className="leading-tight">
+                                    <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-slate-500">Powered by</div>
+                                    <div className="font-heading text-sm font-bold text-slate-900">Arivu Foundation</div>
+                                </div>
                             </div>
                         </div>
                     </div>

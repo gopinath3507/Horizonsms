@@ -1,5 +1,5 @@
 export const LOGO_URL = "https://customer-assets.emergentagent.com/job_d36639f8-a3b4-44b2-9bb7-fc1d3aa4d809/artifacts/wliplyag_Logo%20nn.png";
-export const ARIVU_LOGO_URL = "https://customer-assets.emergentagent.com/job_horizon-school-hub/artifacts/2x0ldttu_ArivuLogotransparent.png";
+export const ARIVU_LOGO_URL = "https://customer-assets.emergentagent.com/job_horizon-school-hub/artifacts/jx9ug6j8_ArivuLogotransparent.png";
 
 export const SCHOOL = {
     name: "Horizon International Tech Play School",
