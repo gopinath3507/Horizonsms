@@ -196,12 +196,15 @@ export default function BillingPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                                    <div className="shrink-0 flex items-center gap-4">
                                         <img src={ARIVU_LOGO_URL} alt="Arivu Foundation" className="w-20 h-20 object-contain" data-testid="arivu-logo" />
-                                        <div className="inline-block bg-[#4A3FBF] text-white px-5 py-2 rounded-xl font-heading text-2xl font-extrabold tracking-wider shadow-lg">INVOICE</div>
-                                        <div className="font-mono text-sm text-slate-700 font-bold mt-1">#{viewing.invoice_no}</div>
-                                        <div className="text-xs text-slate-500">Issued: <span className="font-semibold text-slate-700">{viewing.issued_date}</span></div>
-                                        <div className="text-xs text-slate-500">Due: <span className="font-semibold text-[#F39C2A]">{viewing.due_date}</span></div>
+                                        <div className="h-20 w-px bg-slate-300" />
+                                        <div className="text-left">
+                                            <div className="inline-block bg-[#4A3FBF] text-white px-5 py-2 rounded-xl font-heading text-2xl font-extrabold tracking-wider shadow-lg">INVOICE</div>
+                                            <div className="font-mono text-sm text-slate-700 font-bold mt-2">#{viewing.invoice_no}</div>
+                                            <div className="text-xs text-slate-500">Issued: <span className="font-semibold text-slate-700">{viewing.issued_date}</span></div>
+                                            <div className="text-xs text-slate-500">Due: <span className="font-semibold text-[#F39C2A]">{viewing.due_date}</span></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
